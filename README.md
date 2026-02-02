@@ -1,43 +1,94 @@
-# Alzheimer's Disease Classification Using Deep Learning
+# Alzheimer's Disease Classification: Architecture Search & Data Integrity Audit
 
 ## Project Overview
-Built a transfer learning model using ResNet50 to classify MRI brain scans into 4 Alzheimer's disease stages, achieving 89% validation accuracy.
+This project focuses on the multi-class classification of Alzheimer’s Disease stages using MRI scans. What began as a standard transfer learning implementation (**Version 1**) evolved into a rigorous investigation of model architecture, preprocessing strategies, and dataset integrity (**Version 2**).
 
-## Clinical Impact
-- **Accuracy:** 89% on 1,280 validation images
-- **Early-Stage Detection:** 91.82%%
-- **Potential Impact:** Support 1000+ annual screenings, reduce radiologist workload 30-40%
+While the final model (**DenseNet121**) achieved a test accuracy of **99.83%**, a post-training forensic audit revealed critical flaws in the open-source dataset (data leakage via pre-augmentation). This project demonstrates the importance of rigorous MLOps practices, showing that **data validation is just as critical as model architecture.**
 
-## Dataset
-- Source: Kaggle Alzheimer's Multi-Class Dataset
-- Classes: Non-Demented, Very Mild, Mild, Moderate
-- Size: 6,400 MRI images (balanced via augmentation)
+---
 
-## Methodology
-1. **Data Preprocessing:** Resized to 224x224, normalized, augmented
-2. **Model:** ResNet50 pre-trained on ImageNet, fine-tuned on Alzheimer's data
-3. **Training:** Early stopping after 3 epochs, best val_loss = 0.28
-4. **Evaluation:** Confusion matrix, per-class metrics, clinical interpretation
+## Evolution: Version 1 vs. Version 2
 
-## Core Challenges & Clinical Implications:
-While overall performance is strong, a deeper analysis reveals specific areas for refinement:
-*   **Distinguishing Early Stages:** The primary challenge lies in differentiating `NonDemented` individuals from those in the very early stages (`VeryMildDemented`). This manifests as:
-    *   **Lower Precision for Very Mild Dementia (76.15%):** The model sometimes incorrectly flags healthy individuals as `VeryMildDemented` (false positives), leading to potential patient anxiety and unnecessary follow-up.
-    *   **Lower Recall for Non-Demented (79.59%):** Healthy individuals are occasionally misclassified into a dementia category, generating false alarms.
-*   **Clinical Trade-off:** The current balance prioritizes catching early-stage dementia (high recall for `VeryMildDemented`) over minimizing false positives for healthy individuals. While this reduces the risk of missing critical early cases, it increases the burden of unnecessary further diagnostics for some.
+This project represents a significant leap in engineering maturity and methodology.
 
-## Strategic Roadmap:
-To build upon this promising foundation and address the identified challenges, a phased approach is recommended:
-1.  **Immediate Deployment as a Screening Assistant:** Implement the model in a human-in-the-loop framework to prioritize radiologist review of high-risk scans, leveraging its high recall for dementia stages.
-2.  **Iterative Model Improvement (Short-Term):** Focus on targeted data augmentation, weighted loss functions, and in-depth error analysis to improve precision for `VeryMildDemented` and recall for `NonDemented`, aiming for a more balanced F1-score across all classes.
-3.  **Long-Term Research & Development:** Explore multi-modal data integration (e.g., combining MRI with cognitive scores, genetics) and develop predictive models for disease progression to move towards more comprehensive patient insights.
+| Feature | **Version 1 (Baseline)** | **Version 2 (Advanced Pipeline)** |
+| :--- | :--- | :--- |
+| **Model** | ResNet50 (Random Unfreezing) | **DenseNet121** (Block-Wise Fine-Tuning) |
+| **Preprocessing** | Standard Rescaling (1./255) | **Per-Image IQR Normalization** (Medical Standard) |
+| **Data Split** | Random Split | **Stratified Split** (Preventing Class Imbalance) |
+| **Selection Logic** | Best Validation Accuracy | **Minimizing Generalization Gap** (Train vs. Val) |
+| **Outcome** | 89% Accuracy (High False Positives) | **99.8% Accuracy** (Triggered Data Audit) |
+
+---
+
+## Methodology (V2)
+
+### 1. Robust Preprocessing Strategy
+Unlike natural images (ImageNet), MRI scans vary significantly in brightness depending on the scanner hardware.
+*   **The Solution:** implemented **Per-Image Robust Normalization** using the Median and Interquartile Range (IQR).
+*   **The Result:** This removed scanner artifacts and forced the model to learn structural brain atrophy rather than pixel intensity, solving the "Covariate Shift" issue that caused models like EfficientNet to fail.
+
+### 2. Architecture Search & Block-Wise Fine-Tuning
+Instead of unfreezing arbitrary layers, I utilized a **Block-Wise Unfreezing** strategy to respect the hierarchical nature of CNNs (Lines $\to$ Shapes $\to$ Structures).
+*   **Models Tested:** ResNet50, EfficientNetB0, DenseNet121.
+*   **Winner:** **DenseNet121** (Freezing first 140 layers). Its feature concatenation architecture proved most robust to the medical data distribution.
+
+---
+
+## Experimental Results
+
+| Model | Configuration | Test Accuracy | F1-Score (Macro) | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **DenseNet121** | Freeze 140 Layers | **99.83%** | **1.00** | **Converged** |
+| **ResNet50** | Unfreeze All | 99.71% | 0.99 | Runner Up |
+| **EfficientNetB0**| All Configs | 25.45% | 0.20 | Failed (Distribution Mismatch) |
+
+### Performance on Key Classes
+The V2 model resolved the clinical trade-offs found in V1, specifically regarding the confusion between **NonDemented** and **VeryMildDemented**.
+
+| Class | Precision | Recall | Support |
+| :--- | :--- | :--- | :--- |
+| **MildDemented** | 1.00 | 1.00 | 1500 |
+| **ModerateDemented** | 1.00 | 1.00 | 1500 |
+| **NonDemented** | 1.00 | 1.00 | 1920 |
+| **VeryMildDemented** | 1.00 | 1.00 | 1680 |
+
+---
+
+## The Forensic Audit: "Too Good To Be True?"
+
+Achieving 99.83% accuracy in medical imaging is statistically improbable and often indicates **Data Leakage**. I refused to accept the results at face value and conducted a forensic audit of the dataset.
+
+### The Findings
+1.  **Duplicate Images:** The dataset contained identical images rotated slightly, existing in both Train and Test sets.
+2.  **Pre-Augmentation:** The source data was heavily augmented *before* release, breaking the independence of the test set.
+3.  **Conclusion:** The model was successfully memorizing the augmentations rather than generalizing to new patients.
+
+### Critical Lesson
+**Data Quality > Model Sophistication.** While the pipeline (Preprocessing + Architecture Search) works perfectly, the results cannot be clinically deployed until the model is retrained on a pristine, non-leaky dataset (e.g., ADNI).
+
+---
+
+## Clinical Implications & Roadmap
+
+Despite the dataset flaw, the **Recall optimization strategy** remains valid for future iterations:
+
+1.  **Immediate Screening Assistant:** The architecture is tuned to prioritize **Recall**, ensuring no severe cases (`ModerateDemented`) are missed.
+2.  **Algorithm Validity:** The success of **DenseNet121 + IQR Normalization** over EfficientNet establishes a clear technical path for processing grayscale medical scans.
+3.  **Next Steps:**
+    *   Secure raw, non-augmented data (ADNI/OASIS).
+    *   Retrain the current pipeline on the clean data.
+    *   Implement 3D Volumetric analysis for deeper insight.
+
+---
 
 ## Technical Stack
-- TensorFlow/Keras
-- ResNet50 Transfer Learning
-- Google Colab (GPU)
-- Python 3.8+
+*   **Deep Learning:** TensorFlow, Keras, Transfer Learning (DenseNet/ResNet)
+*   **Data Processing:** NumPy, Pandas, Scikit-Learn (Stratified Splitting)
+*   **Visualization:** Matplotlib, Seaborn
+*   **Environment:** Google Colab (T4 GPU)
 
 ## Contact
-LinkedIn: www.linkedin.com/in/theresia-saumu-2a1910307
-Email: theresia.saumu@gmail.com
+**Tessa Saumu**
+*   **LinkedIn:** [www.linkedin.com/in/theresia-saumu-2a1910307](www.linkedin.com/in/theresia-saumu-2a1910307)
+*   **Email:** [theresia.saumu@gmail.com](mailto:theresia.saumu@gmail.com)
