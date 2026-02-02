@@ -43,15 +43,22 @@ Instead of unfreezing arbitrary layers, I utilized a **Block-Wise Unfreezing** s
 | **ResNet50** | Unfreeze All | 99.71% | 0.99 | Runner Up |
 | **EfficientNetB0**| All Configs | 25.45% | 0.20 | Failed (Distribution Mismatch) |
 
-### Performance on Key Classes
+### Per Class Metrics
 The V2 model resolved the clinical trade-offs found in V1, specifically regarding the confusion between **NonDemented** and **VeryMildDemented**.
 
-| Class | Precision | Recall | Support |
-| :--- | :--- | :--- | :--- |
-| **MildDemented** | 1.00 | 1.00 | 1500 |
-| **ModerateDemented** | 1.00 | 1.00 | 1500 |
-| **NonDemented** | 1.00 | 1.00 | 1920 |
-| **VeryMildDemented** | 1.00 | 1.00 | 1680 |
+| Class               | Precision           | Recall             | F1 Score           | Support |
+|---------------------|---------------------|--------------------|--------------------|---------|
+| MildDemented        | 0.9986675549633578  | 0.9993333333333333 | 0.9990003332222592 | 1500    |
+| ModerateDemented    | 1.0                 | 1.0                | 1.0                | 1500    |
+| NonDemented         | 0.9989561586638831  | 0.996875           | 0.9979144942648592 | 1920    |
+| VeryMildDemented    | 0.995840760546643   | 0.9976190476190476 | 0.9967291109128754 | 1680    |
+
+Recall and Precision of all classes is 99%+ 
+
+### Training Curves and Confusion Matrix
+<img width="2082" height="730" alt="freeze_conv3_final_curves" src="https://github.com/user-attachments/assets/d7ffdf7c-16a9-456e-bab2-a6bcd62a888d" />
+<img width="1174" height="817" alt="confusion_matrix" src="https://github.com/user-attachments/assets/e7374d8a-dda8-400a-bd54-dc9a335f33cd" />
+
 
 ---
 
