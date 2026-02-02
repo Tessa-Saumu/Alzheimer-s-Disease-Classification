@@ -1,0 +1,44 @@
+{
+  "batch_size": 32,
+  "epochs": 50,
+  "learning_rate": 5e-05,
+  "freeze_configs": [
+    {
+      "name": "freeze_all",
+      "layers": 237
+    },
+    {
+      "name": "freeze_block7",
+      "layers": 234
+    },
+    {
+      "name": "freeze_block6",
+      "layers": 221
+    },
+    {
+      "name": "freeze_block5",
+      "layers": 162
+    },
+    {
+      "name": "freeze_block4",
+      "layers": 119
+    },
+    {
+      "name": "freeze_block3",
+      "layers": 75
+    },
+    {
+      "name": "freeze_block2",
+      "layers": 46
+    },
+    {
+      "name": "freeze_block1",
+      "layers": 17
+    },
+    {
+      "name": "freeze_none",
+      "layers": 0
+    }
+  ],
+  "timestamp": "2026-02-01T14:18:37.927127"
+}

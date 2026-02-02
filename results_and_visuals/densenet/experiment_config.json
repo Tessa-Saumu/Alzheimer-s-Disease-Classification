@@ -1,0 +1,32 @@
+{
+  "batch_size": 32,
+  "epochs": 10,
+  "learning_rate": 5e-05,
+  "freeze_configs": [
+    {
+      "name": "freeze_all",
+      "layers": 462
+    },
+    {
+      "name": "freeze_conv4",
+      "layers": 312
+    },
+    {
+      "name": "freeze_conv3",
+      "layers": 140
+    },
+    {
+      "name": "freeze_conv2",
+      "layers": 52
+    },
+    {
+      "name": "freeze_conv1",
+      "layers": 6
+    },
+    {
+      "name": "freeze_none",
+      "layers": 0
+    }
+  ],
+  "timestamp": "2026-02-01T12:34:38.925823"
+}

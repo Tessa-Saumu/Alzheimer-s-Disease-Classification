@@ -1,0 +1,5 @@
+class,precision,recall,f1,support
+MildDemented,0.0,0.0,0.0,1500
+ModerateDemented,0.0,0.0,0.0,1500
+NonDemented,0.0,0.0,0.0,1920
+VeryMildDemented,0.2545454545454545,1.0,0.4057971014492754,1680
