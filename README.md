@@ -86,7 +86,7 @@ Despite the dataset flaw, the **Recall optimization strategy** remains valid for
 *   **Deep Learning:** TensorFlow, Keras, Transfer Learning (DenseNet/ResNet)
 *   **Data Processing:** NumPy, Pandas, Scikit-Learn (Stratified Splitting)
 *   **Visualization:** Matplotlib, Seaborn
-*   **Environment:** Google Colab (T4 GPU)
+*   **Environment:** Google Colab and Kaggle (T4 GPU)
 
 ## Contact
 **Tessa Saumu**
