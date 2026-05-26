@@ -97,5 +97,5 @@ Despite the dataset flaw, the **Recall optimization strategy** remains valid for
 
 ## Contact
 **Tessa Saumu**
-*   **LinkedIn:** [www.linkedin.com/in/theresia-saumu-2a1910307](www.linkedin.com/in/theresia-saumu-2a1910307)
+*   **LinkedIn:** [www.linkedin.com/in/tessa-saumu](www.linkedin.com/in/tessa-saumu)
 *   **Email:** [theresia.saumu@gmail.com](mailto:theresia.saumu@gmail.com)
