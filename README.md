@@ -1,101 +1,49 @@
-# Alzheimer's Disease Classification: Architecture Search & Data Integrity Audit
+# Alzheimer's MRI: Transfer Learning and Data Integrity Investigation
 
-## Project Overview
-This project focuses on the multi-class classification of Alzheimer’s Disease stages using MRI scans. What began as a standard transfer learning implementation (**Version 1**) evolved into a rigorous investigation of model architecture, preprocessing strategies, and dataset integrity (**Version 2**).
+A four-class MRI transfer-learning experiment whose apparent high accuracy was rejected after an investigation found duplicate contamination and an invalid evaluation design.
 
-While the final model (**DenseNet121**) achieved a test accuracy of **99.83%**, a post-training forensic audit revealed critical flaws in the open-source dataset (data leakage via pre-augmentation). This project demonstrates the importance of rigorous MLOps practices, showing that **data validation is just as critical as model architecture.**
+## Problem
 
----
+Compare ResNet50, DenseNet121 and EfficientNetB0 on MRI slices, then investigate whether the reported results measured generalization to unseen patients.
 
-## Evolution: Version 1 vs. Version 2
+## What I did
 
-This project represents a significant leap in engineering maturity and methodology.
+I implemented the notebook experiments, per-image median/IQR normalization, freeze-depth comparisons, model-selection logic and saved prediction/metric artifacts. I documented a post-training duplicate investigation and withdrew the high-accuracy result as evidence of predictive performance. This is my experimental work on third-party images; I did not collect or clinically label the dataset. The repository was uploaded in one commit, so it does not preserve an incremental development trail.
 
-| Feature | **Version 1 (Baseline)** | **Version 2 (Advanced Pipeline)** |
-| :--- | :--- | :--- |
-| **Model** | ResNet50 (Random Unfreezing) | **DenseNet121** (Block-Wise Fine-Tuning) |
-| **Preprocessing** | Standard Rescaling (1./255) | **Per-Image IQR Normalization** (Medical Standard) |
-| **Data Split** | Random Split | **Stratified Split** (Preventing Class Imbalance) |
-| **Selection Logic** | Best Validation Accuracy | **Minimizing Generalization Gap** (Train vs. Val) |
-| **Outcome** | 89% Accuracy (High False Positives) | **99.8% Accuracy** (Triggered Data Audit) |
+## Method
 
----
+The V2 notebooks compare three ImageNet backbones with a common classification head and different freezing depths. They consume an image-level stratified split, not a patient-grouped split. Pre-augmented and near-duplicate images undermine split independence. Minimizing the training/validation gap cannot correct contaminated validation data.
 
-## Methodology (V2)
+## Evaluation / Results
 
-### 1. Robust Preprocessing Strategy
-Unlike natural images (ImageNet), MRI scans vary significantly in brightness depending on the scanner hardware.
-*   **The Solution:** implemented **Per-Image Robust Normalization** using the Median and Interquartile Range (IQR).
-*   **The Result:** This removed scanner artifacts and forced the model to learn structural brain atrophy rather than pixel intensity, solving the "Covariate Shift" issue that caused models like EfficientNet to fail.
+**These are historical outputs from an invalid evaluation, not estimates of clinical or unseen-patient performance.**
 
-### 2. Architecture Search & Block-Wise Fine-Tuning
-Instead of unfreezing arbitrary layers, I utilized a **Block-Wise Unfreezing** strategy to respect the hierarchical nature of CNNs (Lines $\to$ Shapes $\to$ Structures).
-*   **Models Tested:** ResNet50, EfficientNetB0, DenseNet121.
-*   **Winner:** **DenseNet121** (Freezing first 140 layers). Its feature concatenation architecture proved most robust to the medical data distribution.
+| Architecture | Recorded final test accuracy | Interpretation |
+|---|---:|---|
+| DenseNet121, first 140 layers frozen | 99.83% | Withdrawn as a generalization claim because of contamination |
+| ResNet50, all layers unfrozen | 99.71% | Same invalid evaluation setting |
+| EfficientNetB0, selected final checkpoint | 25.45% | Collapsed to one class after reload; cause not established |
 
----
+Each recorded test prediction file contains 6,600 rows. EfficientNet's 25.45% is its final reloaded-checkpoint result, not the result of every experiment: its sweep includes much higher validation scores. No controlled experiment establishes batch normalization or custom normalization as the cause of the collapse.
 
-## Experimental Results
+## Key finding
 
-| Model | Configuration | Test Accuracy | F1-Score (Macro) | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| **DenseNet121** | Freeze 140 Layers | **99.83%** | **1.00** | **Converged** |
-| **ResNet50** | Unfreeze All | 99.71% | 0.99 | Runner Up |
-| **EfficientNetB0**| All Configs | 25.45% | 0.20 | Failed (Distribution Mismatch) |
+The project supports a data-integrity case study: apparently excellent image-level metrics can be invalid when related images cross splits. It does not establish a usable Alzheimer's classifier or a superior clinical architecture.
 
-### Per Class Metrics
-The V2 model resolved the clinical trade-offs found in V1, specifically regarding the confusion between **NonDemented** and **VeryMildDemented**.
+## Evidence and limitations
 
-| Class               | Precision           | Recall             | F1 Score           | Support |
-|---------------------|---------------------|--------------------|--------------------|---------|
-| MildDemented        | 0.9986675549633578  | 0.9993333333333333 | 0.9990003332222592 | 1500    |
-| ModerateDemented    | 1.0                 | 1.0                | 1.0                | 1500    |
-| NonDemented         | 0.9989561586638831  | 0.996875           | 0.9979144942648592 | 1920    |
-| VeryMildDemented    | 0.995840760546643   | 0.9976190476190476 | 0.9967291109128754 | 1680    |
+- [Final investigation report](notebooks/Alzheimer%27s_Disease_Final_Project_Report.ipynb): historical narrative and embedded duplicate-audit screenshot. Some historical explanatory claims are hypotheses; the qualifications in this README govern the application snapshot.
+- [DenseNet experiments](notebooks/Alzheimer%27s_densenet-experiments-and-final-training.ipynb), [ResNet experiments](notebooks/Alzheimer%27s_resnet-experiments-and-final-training.ipynb), [EfficientNet experiments](notebooks/Alzheimer%27s_efficientnet-experiments-and-final-training.ipynb).
+- [Saved results](results_and_visuals/): prediction CSVs, per-class metrics, configurations and figures. The figure below is a record of the rejected evaluation, not a clinical result.
 
-Recall and Precision of all classes is 99%+ 
+![Historical DenseNet confusion matrix from the contaminated evaluation](results_and_visuals/densenet/confusion_matrix.png)
 
-### Training Curves and Confusion Matrix
-<img width="2082" height="730" alt="freeze_conv3_final_curves" src="https://github.com/user-attachments/assets/d7ffdf7c-16a9-456e-bab2-a6bcd62a888d" />
-<img width="1174" height="817" alt="confusion_matrix" src="https://github.com/user-attachments/assets/e7374d8a-dda8-400a-bd54-dc9a335f33cd" />
+Dataset provenance, redistribution licence and patient identities are not established in the repository. Do not infer permission to reuse its images or a verified number of source scans. The split notebook has no saved execution outputs; the exact consumed Kaggle split and trained weights are not included. The original duplicate audit is preserved as a screenshot, not an executable audit script. There is no patient-level/external validation, clinical deployment, API or demonstrated clinical benefit.
 
+## Reproducibility
 
----
-
-## The Forensic Audit: "Too Good To Be True?"
-
-Achieving 99.83% accuracy in medical imaging is statistically improbable and often indicates **Data Leakage**. I refused to accept the results at face value and conducted a forensic audit of the dataset.
-
-### The Findings
-1.  **Duplicate Images:** The dataset contained identical images rotated slightly, existing in both Train and Test sets.
-2.  **Pre-Augmentation:** The source data was heavily augmented *before* release, breaking the independence of the test set.
-3.  **Conclusion:** The model was successfully memorizing the augmentations rather than generalizing to new patients.
-
-### Critical Lesson
-**Data Quality > Model Sophistication.** While the pipeline (Preprocessing + Architecture Search) works perfectly, the results cannot be clinically deployed until the model is retrained on a pristine, non-leaky dataset (e.g., ADNI).
-
----
-
-## Clinical Implications & Roadmap
-
-Despite the dataset flaw, the **Recall optimization strategy** remains valid for future iterations:
-
-1.  **Immediate Screening Assistant:** The architecture is tuned to prioritize **Recall**, ensuring no severe cases (`ModerateDemented`) are missed.
-2.  **Algorithm Validity:** The success of **DenseNet121 + IQR Normalization** over EfficientNet establishes a clear technical path for processing grayscale medical scans.
-3.  **Next Steps:**
-    *   Secure raw, non-augmented data (ADNI/OASIS).
-    *   Retrain the current pipeline on the clean data.
-    *   Implement 3D Volumetric analysis for deeper insight.
-
----
-
-## Technical Stack
-*   **Deep Learning:** TensorFlow, Keras, Transfer Learning (DenseNet/ResNet)
-*   **Data Processing:** NumPy, Pandas, Scikit-Learn (Stratified Splitting)
-*   **Visualization:** Matplotlib, Seaborn
-*   **Environment:** Google Colab and Kaggle (T4 GPU)
+The committed CSVs and notebook outputs can be inspected without retraining. Full training reproduction is not established: notebooks reference external/private Kaggle inputs and Colab paths, and there is no pinned environment. No new training or corrected clean-data evaluation is claimed.
 
 ## Contact
-**Tessa Saumu**
-*   **LinkedIn:** [www.linkedin.com/in/tessa-saumu](www.linkedin.com/in/tessa-saumu)
-*   **Email:** [theresia.saumu@gmail.com](mailto:theresia.saumu@gmail.com)
+
+[Theresia Saumu on LinkedIn](https://www.linkedin.com/in/theresia-saumu/) · [Email](mailto:theresia.saumu@gmail.com)
