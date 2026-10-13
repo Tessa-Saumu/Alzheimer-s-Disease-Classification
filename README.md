@@ -38,7 +38,7 @@ The project supports a data-integrity case study: apparently excellent image-lev
 
 ![Historical DenseNet confusion matrix from the contaminated evaluation](results_and_visuals/densenet/confusion_matrix.png)
 
-Dataset provenance, redistribution licence and patient identities are not established in the repository. Do not infer permission to reuse its images or a verified number of source scans. The split notebook has no saved execution outputs; the exact consumed Kaggle split and trained weights are not included. The original duplicate audit is preserved as a screenshot, not an executable audit script. There is no patient-level/external validation, clinical deployment, API or demonstrated clinical benefit.
+Dataset provenance, redistribution licence and patient identities are not established in the repository. Do not infer permission to reuse its images or a verified number of source scans. The split notebook has no saved execution outputs; the exact consumed Kaggle split and trained weights are not included. The original duplicate investigation remains a historical screenshot. The new executable audit below checks an explicit permitted manifest; it does not reconstruct the original consumed split. There is no patient-level/external validation, clinical deployment, API or demonstrated clinical benefit.
 
 ## Reproducibility
 
@@ -47,3 +47,13 @@ The committed CSVs and notebook outputs can be inspected without retraining. Ful
 ## Contact
 
 [Theresia Saumu on LinkedIn](https://www.linkedin.com/in/theresia-saumu/) · [Email](mailto:theresia.saumu@gmail.com)
+
+## Verify the supporting case study
+
+```bash
+python -m pip install -r requirements-audit.txt
+python -m pytest tests -q
+python audit_duplicates.py permitted_split.csv --output audit_result.json
+```
+
+The tests generate synthetic images locally, including an intentional exact duplicate across train/test and a byte-distinct perceptual collision. They demonstrate the audit mechanics without distributing medical data. The manifest format is `path,split`, relative to the CSV, with train/validation/test labels. Preserve its SHA256-linked output. [Data provenance and limitations](DATA_PROVENANCE.md) explains why matching hashes do not establish patient identity. No original-dataset leakage rate or clean classifier is reproduced here. [Bounded audit and plan](SUPPORTING_AUDIT_PLAN.md).
