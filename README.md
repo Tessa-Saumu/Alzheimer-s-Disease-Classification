@@ -1,49 +1,48 @@
-# Alzheimer's MRI: Transfer Learning and Data Integrity Investigation
+# Alzheimer's MRI: an experiment I could not trust
 
-A four-class MRI transfer-learning experiment whose apparent high accuracy was rejected after an investigation found duplicate contamination and an invalid evaluation design.
+I compared three image-classification models on MRI scans, then investigated why the results looked unusually good. The important outcome was withdrawing the accuracy claim after finding that related images crossed the evaluation splits.
 
-## Problem
-
-Compare ResNet50, DenseNet121 and EfficientNetB0 on MRI slices, then investigate whether the reported results measured generalization to unseen patients.
+This is a data-integrity case study, not an Alzheimer's diagnostic tool.
 
 ## What I did
 
-I implemented the notebook experiments, per-image median/IQR normalization, freeze-depth comparisons, model-selection logic and saved prediction/metric artifacts. I documented a post-training duplicate investigation and withdrew the high-accuracy result as evidence of predictive performance. This is my experimental work on third-party images; I did not collect or clinically label the dataset. The repository was uploaded in one commit, so it does not preserve an incremental development trail.
+I implemented the notebook experiments, image-intensity normalization, comparisons of how much of each pretrained model to retrain, model selection and saved prediction files. I then documented the duplicate investigation and the reasons not to deploy the result.
 
-## Method
+The images are third-party data; I did not collect or clinically label them. The original work was uploaded in one bulk commit, so the repository does not preserve an incremental development trail. The later portfolio cleanup added a small executable duplicate audit and clearer limits; it did not retrain the models.
 
-The V2 notebooks compare three ImageNet backbones with a common classification head and different freezing depths. They consume an image-level stratified split, not a patient-grouped split. Pre-augmented and near-duplicate images undermine split independence. Minimizing the training/validation gap cannot correct contaminated validation data.
+## What the results mean
 
-## Evaluation / Results
+The experiment split individual images, not patients. Similar and pre-augmented images could therefore appear on both sides of the split. A model doing well in that setting has not demonstrated performance on unseen patients.
 
-**These are historical outputs from an invalid evaluation, not estimates of clinical or unseen-patient performance.**
-
-| Architecture | Recorded final test accuracy | Interpretation |
+| Model | Historical test accuracy | Interpretation |
 |---|---:|---|
-| DenseNet121, first 140 layers frozen | 99.83% | Withdrawn as a generalization claim because of contamination |
-| ResNet50, all layers unfrozen | 99.71% | Same invalid evaluation setting |
-| EfficientNetB0, selected final checkpoint | 25.45% | Collapsed to one class after reload; cause not established |
+| DenseNet121 | 99.83% | Withdrawn as evidence of generalization |
+| ResNet50 | 99.71% | Same contaminated evaluation |
+| EfficientNetB0 | 25.45% | Predicted one class after checkpoint reload; cause unresolved |
 
-Each recorded test prediction file contains 6,600 rows. EfficientNet's 25.45% is its final reloaded-checkpoint result, not the result of every experiment: its sweep includes much higher validation scores. No controlled experiment establishes batch normalization or custom normalization as the cause of the collapse.
+Each saved test file contains **6,600 rows**. Recalculating accuracy from those CSV files confirmed the recorded values; it does not validate the split. EfficientNet's 25.45% describes the final reloaded checkpoint, not every experiment. There is no controlled evidence that its failure was caused by batch normalization or my image normalization.
 
-## Key finding
+![Historical confusion matrix from the rejected DenseNet evaluation](results_and_visuals/densenet/confusion_matrix.png)
 
-The project supports a data-integrity case study: apparently excellent image-level metrics can be invalid when related images cross splits. It does not establish a usable Alzheimer's classifier or a superior clinical architecture.
+## Run the small audit
 
-## Evidence and limitations
+The new script accepts a CSV listing image `path,split`, with paths relative to that CSV and split labels `train`, `validation` or `test`. Use only images you have permission to process.
 
-- [Final investigation report](notebooks/Alzheimer%27s_Disease_Final_Project_Report.ipynb): historical narrative and embedded duplicate-audit screenshot. Some historical explanatory claims are hypotheses; the qualifications in this README govern the application snapshot.
-- [DenseNet experiments](notebooks/Alzheimer%27s_densenet-experiments-and-final-training.ipynb), [ResNet experiments](notebooks/Alzheimer%27s_resnet-experiments-and-final-training.ipynb), [EfficientNet experiments](notebooks/Alzheimer%27s_efficientnet-experiments-and-final-training.ipynb).
-- [Saved results](results_and_visuals/): prediction CSVs, per-class metrics, configurations and figures. The figure below is a record of the rejected evaluation, not a clinical result.
+```bash
+python -m pip install -r requirements-audit.txt
+python -m pytest tests -q
+python audit_duplicates.py permitted_split.csv --output audit_result.json
+```
 
-![Historical DenseNet confusion matrix from the contaminated evaluation](results_and_visuals/densenet/confusion_matrix.png)
+**Two tests passed** using images created locally for the tests. They check exact duplicates across train/test, a visually similar but byte-distinct false match, and invalid manifest entries. No medical images are required for those checks.
 
-Dataset provenance, redistribution licence and patient identities are not established in the repository. Do not infer permission to reuse its images or a verified number of source scans. The split notebook has no saved execution outputs; the exact consumed Kaggle split and trained weights are not included. The original duplicate audit is preserved as a screenshot, not an executable audit script. There is no patient-level/external validation, clinical deployment, API or demonstrated clinical benefit.
+The output records the manifest and image SHA256 hashes, which fingerprint file contents, alongside a simple visual average-hash check. Exact file matches and visual matches are different kinds of evidence. A visual match is a reason to investigate; it does not identify a patient. The synthetic checks verify the script's mechanics, not the original dataset's leakage rate.
 
-## Reproducibility
+## What remains unresolved
 
-The committed CSVs and notebook outputs can be inspected without retraining. Full training reproduction is not established: notebooks reference external/private Kaggle inputs and Colab paths, and there is no pinned environment. No new training or corrected clean-data evaluation is claimed.
+The image source, redistribution licence and patient identities are not established. The exact Kaggle split used for training and the trained weights are not included. Private input paths and an unpinned training environment prevent a verified training rerun. There is no clean patient-level test, external validation, clinical deployment or demonstrated clinical benefit.
 
-## Contact
+The [original report](notebooks/Alzheimer%27s_Disease_Final_Project_Report.ipynb) retains the historical screenshot investigation and hypotheses. The [saved results](results_and_visuals/) and [DenseNet](notebooks/Alzheimer%27s_densenet-experiments-and-final-training.ipynb), [ResNet](notebooks/Alzheimer%27s_resnet-experiments-and-final-training.ipynb) and [EfficientNet](notebooks/Alzheimer%27s_efficientnet-experiments-and-final-training.ipynb) notebooks retain the experiment record. See [data provenance and audit limits](DATA_PROVENANCE.md) before processing images.
 
-[Theresia Saumu on LinkedIn](https://www.linkedin.com/in/theresia-saumu/) · [Email](mailto:theresia.saumu@gmail.com)
+
+[Theresia Saumu on LinkedIn](https://www.linkedin.com/in/theresia-saumu/)
