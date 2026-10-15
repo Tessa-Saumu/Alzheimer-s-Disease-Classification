@@ -1,4 +1,4 @@
-# Alzheimer's MRI: an experiment I could not trust
+# Alzheimer's MRI Classification and Evaluation Integrity
 
 I compared three MRI image-classification models and withdrew their generalization claims after investigating contamination between evaluation splits.
 
