@@ -1,6 +1,6 @@
-# Alzheimer's MRI Classification and Evaluation Integrity
+# Alzheimer's MRI: Comparative Classification Experiments
 
-I compared three MRI image-classification models and withdrew their generalization claims after investigating contamination between evaluation splits.
+I built a comparative MRI classification workflow across DenseNet121, ResNet50 and EfficientNetB0, including normalization, block-wise fine-tuning, checkpoint evaluation and saved predictions. The investigation led to a recommendation to restart with raw, non-augmented data such as ADNI or OASIS and patient-level evaluation before deployment.
 
 ## The problem
 
@@ -8,7 +8,9 @@ The experiment classified images into four dementia-related categories. Unusuall
 
 ## What I built
 
-Notebook experiments for image normalization, pretrained-model fine-tuning, model selection and saved predictions. The later portfolio cleanup added a manifest-driven duplicate audit with synthetic tests and explicit provenance limits. This is a data-integrity case study, not a diagnostic tool.
+I implemented three transfer-learning experiment pipelines for four-class MRI image classification: intensity normalization, configurable fine-tuning, model selection from training/validation behavior, checkpoint reload evaluation and saved prediction artifacts. The framework made it possible to compare architectures and investigate whether apparently strong results were trustworthy.
+
+The experiment and written recommendation are the main outputs. A later manifest-driven duplicate-audit utility adds reproducible synthetic checks and explicit provenance limits. This research workflow is not a clinically validated diagnostic tool.
 
 ## Architecture
 
@@ -38,19 +40,19 @@ Notebook configuration, checkpoint callbacks and CSV/JSON/PNG experiment artifac
 
 ## Results
 
-| Model | Historical test accuracy | Meaning |
-|---|---:|---|
-| DenseNet121 | 99.83% | Withdrawn as evidence of generalization |
-| ResNet50 | 99.71% | Same contaminated evaluation |
-| EfficientNetB0 | 25.45% | Final reloaded checkpoint only; cause unresolved |
+The work produced **three architecture experiment pipelines**, saved predictions and a written recommendation to rebuild on suitable raw data before further performance claims. Each saved test-prediction CSV contains 6,600 rows.
 
-Each saved test CSV contains **6,600 rows**. Recalculation confirmed these values, without validating the split. **Two synthetic audit tests passed** on 13 October 2026, checking exact cross-split duplicates, a visual false match and invalid manifests. No medical images were required or reprocessed in that check.
+The investigation identified an evaluation-integrity problem that changing architectures alone could not resolve. Related and pre-augmented images may cross the image-level splits; the exact consumed split cannot be reconstructed. The reported scores therefore do not establish unseen-patient performance.
+
+The [original final report](notebooks/Alzheimer%27s_Disease_Final_Project_Report.ipynb) recommends raw, non-augmented ADNI or OASIS data and no deployment on the present evidence. Patient-level evaluation is a next step, not completed work. EfficientNet's reloaded checkpoint predicted one class; its cause remains unresolved.
+
+The [historical evaluation record](EVALUATION_RECORD.md) preserves the rejected scores, saved-artifact checks and later synthetic audit results. [Data provenance](DATA_PROVENANCE.md) explains the reconstruction limits.
 
 ## Demo
 
-![Historical confusion matrix from the rejected DenseNet evaluation](results_and_visuals/densenet/confusion_matrix.png)
+[Explore the experiment notebooks and recommendation](notebooks/Alzheimer%27s_Disease_Final_Project_Report.ipynb).
 
-This image is historical rejected-evaluation evidence, not diagnostic performance. The [original report](notebooks/Alzheimer%27s_Disease_Final_Project_Report.ipynb) preserves the investigation and hypotheses. There is no live deployment.
+The saved [historical confusion matrix](results_and_visuals/densenet/confusion_matrix.png) is rejected-evaluation evidence, not diagnostic performance. There is no live deployment.
 
 ## Run locally
 
@@ -83,8 +85,8 @@ Image source, redistribution licence, patient identities and the exact consumed 
 
 ## What I would improve next
 
-1. Resolve permitted image provenance and preserve the exact split manifest.
-2. Build a clean patient-level evaluation before making predictive claims.
+1. Obtain permitted raw, non-augmented data such as ADNI or OASIS and preserve its provenance.
+2. Build a clean patient-level split and evaluation before making predictive claims.
 3. Investigate checkpoint reload behaviour with controlled tests.
 
 ## My contribution
